@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sujoy Roy :: Cybersecurity Portfolio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --glow-color-green: #39ff14;
+            --glow-color-blue: #149dff;
+            --glow-color-pink: #ff00c1;
+        }
+
+        body {
+            font-family: 'Fira Code', monospace;
+            background-color: #02040a;
+            color: #c9d1d9;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* --- Particle & Aurora Background --- */
+        #background-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -2;
+        }
+
+        /* --- Interactive Spotlight Effect --- */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: radial-gradient(circle 400px at var(--x, 50%) var(--y, 50%), rgba(20, 157, 255, 0.08), transparent 40%);
+            z-index: -1;
+            pointer-events: none;
+            transition: background 0.1s ease-out;
+        }
+
+        .neon-text-green { text-shadow: 0 0 5px var(--glow-color-green), 0 0 10px var(--glow-color-green), 0 0 20px var(--glow-color-green), 0 0 40px #2b9e1a; }
+        .neon-text-blue { text-shadow: 0 0 5px var(--glow-color-blue), 0 0 10px var(--glow-color-blue), 0 0 20px var(--glow-color-blue), 0 0 40px #1072b8; }
+        
+        .glitch { position: relative; display: inline-block; }
+        .glitch:before, .glitch:after {
+            content: attr(data-text); position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: #02040a; overflow: hidden; clip: rect(0, 0, 0, 0);
+        }
+        .glitch:before { left: 2px; text-shadow: -2px 0 var(--glow-color-pink); animation: glitch-anim-1 5s infinite linear alternate-reverse; }
+        .glitch:after { left: -2px; text-shadow: -2px 0 var(--glow-color-blue), 2px 2px var(--glow-color-pink); animation: glitch-anim-2 3s infinite linear alternate-reverse; }
+
+        @keyframes glitch-anim-1 { 0% { clip: rect(42px, 9999px, 44px, 0); } 100% { clip: rect(50px, 9999px, 148px, 0); } }
+        @keyframes glitch-anim-2 { 0% { clip: rect(2px, 9999px, 99px, 0); } 100% { clip: rect(92px, 9999px, 66px, 0); } }
+
+        .terminal-border { border: 1px solid rgba(57, 255, 20, 0.3); box-shadow: 0 0 10px rgba(57, 255, 20, 0.1); transition: all 0.3s ease-in-out; }
+        
+        .blinking-cursor { display: inline-block; width: 10px; height: 1.2em; background-color: var(--glow-color-green); animation: blink 1s step-end infinite; margin-left: 5px; }
+        @keyframes blink { 50% { background-color: transparent; } }
+
+        /* --- 3D Glassmorphism Card Effect --- */
+        .glass-card {
+            background: rgba(22, 27, 34, 0.5);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(57, 255, 20, 0.2);
+            transform-style: preserve-3d;
+            transition: transform 0.1s ease-out, border-color 0.3s, box-shadow 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        .glass-card::before { /* Shine effect */
+            content: '';
+            position: absolute;
+            top: var(--shine-y, 50%);
+            left: var(--shine-x, 50%);
+            transform: translate(-50%, -50%);
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+        .glass-card:hover { border-color: rgba(57, 255, 20, 0.8); box-shadow: 0 0 30px rgba(57, 255, 20, 0.3); }
+        .glass-card:hover::before { opacity: 1; }
+
+        .reveal { opacity: 0; transform: translateY(50px); transition: opacity 0.8s ease-out, transform 0.6s ease-out; }
+        .reveal.visible { opacity: 1; transform: translateY(0); }
+
+        .nav-link { position: relative; transition: color 0.3s; }
+        .nav-link::after { content: ''; position: absolute; width: 0; height: 2px; bottom: -5px; left: 50%; transform: translateX(-50%); background-color: var(--glow-color-green); transition: width 0.3s ease-out; }
+        .nav-link:hover::after { width: 100%; }
+
+        /* --- Timeline --- */
+        .timeline-item { position: relative; padding-left: 3rem; }
+        .timeline-item:not(:last-child) { padding-bottom: 2rem; border-left: 2px solid rgba(57, 255, 20, 0.3); }
+        .timeline-dot { position: absolute; left: -9px; top: 5px; width: 16px; height: 16px; background-color: var(--glow-color-green); border-radius: 50%; border: 3px solid #0d1117; transform: scale(0); transition: transform 0.4s ease-out .2s, box-shadow 0.3s; }
+        .timeline-item.visible .timeline-dot { transform: scale(1); box-shadow: 0 0 15px var(--glow-color-green); }
+    </style>
+</head>
+<body>
+    <canvas id="background-canvas"></canvas>
+
+    <!-- Splash Screen -->
+    <div id="splash" class="fixed inset-0 bg-[#02040a] z-50 flex items-center justify-center">
+        <pre id="boot-sequence" class="w-full max-w-4xl p-4 text-sm md:text-base"></pre>
+    </div>
+
+    <div id="main-content" class="hidden">
+        <!-- Header -->
+        <header id="page-header" class="bg-[#0d1117]/50 backdrop-blur-sm fixed w-full top-0 z-40 border-b border-green-500/20 shadow-lg shadow-green-500/5 transition-all duration-300">
+            <nav class="container mx-auto px-6 py-4 flex justify-between items-center transition-all duration-300">
+                <a href="#" class="text-xl font-bold text-green-400 neon-text-green glitch" data-text="Sujoy_Roy">Sujoy_Roy</a>
+                <div class="hidden md:flex space-x-8">
+                    <a href="#intro" class="nav-link hover:text-green-400">./intro</a>
+                    <a href="#skills" class="nav-link hover:text-green-400">./skills</a>
+                    <a href="#career" class="nav-link hover:text-green-400">./career</a>
+                    <a href="#projects" class="nav-link hover:text-green-400">./projects</a>
+                    <a href="#contact" class="nav-link hover:text-green-400">./contact</a>
+                </div>
+                <button id="mobile-menu-btn" class="md:hidden text-green-400 z-50">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                </button>
+            </nav>
+            <div id="mobile-menu" class="hidden md:hidden bg-[#0d1117]/90 backdrop-blur-md absolute top-0 left-0 w-full h-screen pt-24">
+                <div class="flex flex-col items-center justify-center h-full space-y-8 text-xl">
+                    <a href="#intro" class="mobile-nav-link hover:text-green-400 transition-colors">./intro</a>
+                    <a href="#skills" class="mobile-nav-link hover:text-green-400 transition-colors">./skills</a>
+                    <a href="#career" class="mobile-nav-link hover:text-green-400 transition-colors">./career</a>
+                    <a href="#projects" class="mobile-nav-link hover:text-green-400 transition-colors">./projects</a>
+                    <a href="#contact" class="mobile-nav-link hover:text-green-400 transition-colors">./contact</a>
+                </div>
+            </div>
+        </header>
+
+        <main class="container mx-auto px-6 pt-24 relative z-10">
+            <!-- Introduction -->
+            <section id="intro" class="min-h-screen flex items-center">
+                <div>
+                    <p class="text-lg md:text-xl text-green-400">Hi, I'm Sujoy Roy.</p>
+                    <h1 class="text-4xl sm:text-5xl md:text-6xl font-bold">
+                        <span id="typing-text" class="text-blue-400 neon-text-blue"></span><span class="blinking-cursor"></span>
+                    </h1>
+                    <p class="mt-4 text-lg md:text-xl max-w-3xl">A cybersecurity architect and ethical hacker with a passion for breaking systems to build them stronger. My mission is to secure the digital world, one vulnerability at a time.</p>
+                    <div class="mt-8 flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
+                        <a href="#projects" class="w-full sm:w-auto text-center bg-green-500/10 border border-green-500 text-green-400 py-2 px-4 rounded-lg hover:bg-green-500/20 transition-all transform hover:-translate-y-1">View Projects</a>
+                        <a href="#contact" class="w-full sm:w-auto text-center bg-blue-500/10 border border-blue-500 text-blue-400 py-2 px-4 rounded-lg hover:bg-blue-500/20 transition-all transform hover:-translate-y-1">Contact Me</a>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Skills -->
+            <section id="skills" class="py-20 reveal">
+                <h2 class="text-3xl font-bold text-center mb-16"><span class="text-green-400">/</span>Technical Arsenal</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 text-center">
+                    <div class="glass-card p-6 rounded-lg flex flex-col items-center justify-center">
+                        <h3 class="text-xl font-bold text-blue-400 mb-2">Penetration Testing</h3><p class="text-sm">Advanced manual and automated testing of networks and applications.</p>
+                    </div>
+                    <div class="glass-card p-6 rounded-lg flex flex-col items-center justify-center">
+                        <h3 class="text-xl font-bold text-blue-400 mb-2">Malware Analysis</h3><p class="text-sm">Reverse engineering and dynamic analysis of malicious software.</p>
+                    </div>
+                    <div class="glass-card p-6 rounded-lg flex flex-col items-center justify-center">
+                        <h3 class="text-xl font-bold text-blue-400 mb-2">Cloud Security</h3><p class="text-sm">Securing AWS, Azure, and GCP environments. Auditing and hardening.</p>
+                    </div>
+                    <div class="glass-card p-6 rounded-lg flex flex-col items-center justify-center">
+                        <h3 class="text-xl font-bold text-blue-400 mb-2">Scripting & Automation</h3><p class="text-sm">Python, Go, and Bash for custom tool development and automation.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Career Timeline -->
+            <section id="career" class="py-20 reveal">
+                <h2 class="text-3xl font-bold text-center mb-16"><span class="text-green-400">/</span>Career & Certifications</h2>
+                <div class="max-w-3xl mx-auto">
+                    <div class="timeline-item reveal"><div class="timeline-dot"></div><h3 class="text-xl font-bold text-blue-400">Offensive Security Certified Professional (OSCP)</h3><p class="text-sm text-gray-400">2023</p><p class="mt-2">Achieved certification demonstrating practical, hands-on penetration testing skills.</p></div>
+                    <div class="timeline-item reveal"><div class="timeline-dot"></div><h3 class="text-xl font-bold text-blue-400">Senior Security Analyst - SecureTech Inc.</h3><p class="text-sm text-gray-400">2021 - Present</p><p class="mt-2">Lead penetration testing engagements and develop custom security tools.</p></div>
+                    <div class="timeline-item reveal"><div class="timeline-dot"></div><h3 class="text-xl font-bold text-blue-400">Certified Ethical Hacker (CEH)</h3><p class="text-sm text-gray-400">2020</p><p class="mt-2">Gained foundational knowledge in ethical hacking methodologies and tools.</p></div>
+                    <div class="timeline-item reveal"><div class="timeline-dot"></div><h3 class="text-xl font-bold text-blue-400">Security Intern - CyberCorp</h3><p class="text-sm text-gray-400">2019 - 2020</p><p class="mt-2">Assisted with vulnerability assessments and security monitoring.</p></div>
+                </div>
+            </section>
+
+            <!-- Threat Globe -->
+            <section id="threat-map" class="py-20 reveal">
+                <h2 class="text-3xl font-bold text-center mb-12"><span class="text-green-400">/</span>Live Threat Visualization</h2>
+                <div id="globe-container" class="h-96 md:h-[600px] w-full cursor-move"></div>
+            </section>
+
+            <!-- Projects -->
+            <section id="projects" class="py-20 reveal">
+                <h2 class="text-3xl font-bold text-center mb-12"><span class="text-green-400">/</span>Projects & Tools</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="glass-card rounded-lg overflow-hidden"><div class="p-6"><h3 class="text-xl font-bold text-blue-400 neon-text-blue mb-2">PhishGuard: AI Phishing Detector</h3><p>A browser extension that uses machine learning to detect and block phishing websites in real-time. Built with Python and TensorFlow.</p></div></div>
+                    <div class="glass-card rounded-lg overflow-hidden"><div class="p-6"><h3 class="text-xl font-bold text-blue-400 neon-text-blue mb-2">PortKnocker: Fast Port Scanner</h3><p>A high-performance, multithreaded port scanner written in Go. Capable of scanning thousands of ports per second.</p></div></div>
+                </div>
+            </section>
+            
+            <!-- Testimonials -->
+            <section id="testimonials" class="py-20 reveal">
+                <h2 class="text-3xl font-bold text-center mb-12"><span class="text-green-400">/</span>Testimonials</h2>
+                <div class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="glass-card p-6 rounded-lg">
+                        <p class="italic">"Sujoy's penetration test was the most thorough we've ever had. His findings were critical in hardening our infrastructure."</p>
+                        <p class="mt-4 text-right font-bold text-blue-400">- CTO, FinTech Innovations</p>
+                    </div>
+                    <div class="glass-card p-6 rounded-lg">
+                        <p class="italic">"An exceptional analyst with a rare talent for finding vulnerabilities others miss. A true asset to any security team."</p>
+                        <p class="mt-4 text-right font-bold text-blue-400">- Lead Incident Responder, SecureTech Inc.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Contact -->
+            <section id="contact" class="py-20 reveal">
+                 <h2 class="text-3xl font-bold text-center mb-12"><span class="text-green-400">/</span>Contact</h2>
+                 <div class="terminal-border max-w-4xl mx-auto rounded-lg bg-[#010409]/70 backdrop-blur-sm shadow-2xl shadow-green-500/10">
+                    <div class="bg-gray-700/50 p-2 flex items-center rounded-t-lg"><div class="w-3 h-3 rounded-full bg-red-500 mr-2"></div><div class="w-3 h-3 rounded-full bg-yellow-500 mr-2"></div><div class="w-3 h-3 rounded-full bg-green-500"></div><span class="ml-auto text-xs text-gray-400">bash --secure-drop</span></div>
+                    <div id="terminal" class="p-4 h-96 overflow-y-auto font-mono text-sm">
+                        <div id="terminal-output"></div>
+                        <div class="flex items-center"><span class="text-green-400">[guest@sujoy-roy ~]$ </span><input type="text" id="terminal-input" class="bg-transparent border-none focus:ring-0 flex-grow ml-2 text-gray-300" autofocus><div id="input-cursor" class="blinking-cursor !h-5 !bg-green-400"></div></div>
+                    </div>
+                 </div>
+            </section>
+        </main>
+        
+        <footer class="text-center py-6 border-t border-green-500/20 text-sm text-gray-500 reveal">
+            <p>Built by Sujoy Roy with <span class="text-green-400">&lt;3</span> and a lot of caffeine.</p><p>&copy; 2025. All rights reserved. Disassemble at your own risk.</p>
+        </footer>
+    </div>
+
+    <script type="module">
+        // --- Onload Logic ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const bootSequenceEl = document.getElementById('boot-sequence');
+            const now = new Date();
+            const bootLines = [
+                `System Time: ${now.toDateString()} ${now.toLocaleTimeString('en-US', { hour12: false })}`, `Location: Khulna, Bangladesh`, 'Booting kernel v6.1.0-h4x...', 'Initializing virtual devices... [OK]', 'Loading user profile: sujoy.roy...', 'Authenticating via quantum entanglement... [ACCESS GRANTED]', 'Establishing secure connection to mainframe... [DONE]', 'Mounting /dev/sec_tools on /mnt/hax...', 'Starting UI services... GHOST (Graphical Host Operating System Terminal)', 'Welcome back, Sujoy Roy.', ''
+            ];
+            let lineIndex = 0;
+            function showBootLine() {
+                if (lineIndex < bootLines.length) {
+                    bootSequenceEl.innerHTML += bootLines[lineIndex] + '\n';
+                    lineIndex++;
+                    setTimeout(showBootLine, Math.random() * 100 + 30);
+                } else {
+                    setTimeout(() => {
+                        document.getElementById('splash').style.opacity = '0';
+                        setTimeout(() => {
+                            document.getElementById('splash').style.display = 'none';
+                            document.getElementById('main-content').style.display = 'block';
+                            initTypingAnimation();
+                        }, 500);
+                    }, 500);
+                }
+            }
+            showBootLine();
+        });
+
+        const typingTextEl = document.getElementById('typing-text');
+        const textToType = "Architect of Digital Defenses.";
+        let charIndex = 0;
+        function initTypingAnimation() {
+            if (charIndex < textToType.length) {
+                typingTextEl.textContent += textToType.charAt(charIndex); charIndex++;
+                setTimeout(initTypingAnimation, 90);
+            }
+        }
+        
+        document.addEventListener('mousemove', e => {
+            document.body.style.setProperty('--x', e.clientX + 'px');
+            document.body.style.setProperty('--y', e.clientY + 'px');
+            
+            document.querySelectorAll('.glass-card').forEach(card => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left; const y = e.clientY - rect.top;
+                card.style.setProperty('--shine-x', `${x}px`); card.style.setProperty('--shine-y', `${y}px`);
+                const rotateX = (y / rect.height - 0.5) * -15; const rotateY = (x / rect.width - 0.5) * 15;
+                card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1, 1, 1)`;
+            });
+        });
+        document.body.addEventListener('mouseleave', () => {
+             document.querySelectorAll('.glass-card').forEach(card => card.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) scale3d(1, 1, 1)');
+        });
+
+        // --- Mobile Menu Logic ---
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+        mobileMenuBtn.addEventListener('click', () => {
+             mobileMenu.classList.toggle('hidden');
+        });
+        document.querySelectorAll('.mobile-nav-link').forEach(link => {
+            link.addEventListener('click', () => mobileMenu.classList.add('hidden'));
+        });
+
+
+        window.addEventListener('scroll', () => {
+            const header = document.getElementById('page-header');
+            if(window.scrollY > 50) { header.querySelector('nav').classList.add('py-2'); header.querySelector('nav').classList.remove('py-4'); } 
+            else { header.querySelector('nav').classList.remove('py-2'); header.querySelector('nav').classList.add('py-4'); }
+        });
+
+        const revealObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) { entry.target.classList.add('visible'); observer.unobserve(entry.target); }
+            });
+        }, { threshold: 0.15 });
+        document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+        
+        const terminalInput = document.getElementById('terminal-input');
+        const terminalOutput = document.getElementById('terminal-output');
+        let formStep = 0; let formData = {};
+        const formPrompts = ['Enter your handle (name): ', 'Enter your secure channel (email): ', 'Enter your message payload: '];
+        function addOutput(text, isCommand = false) {
+            const prompt = isCommand ? `<span class="text-green-400">[guest@sujoy-roy ~]$</span> ` : '';
+            terminalOutput.innerHTML += `<div>${prompt}${text}</div>`;
+            terminalOutput.parentElement.scrollTop = terminalOutput.parentElement.scrollHeight;
+        }
+        addOutput('Welcome to my secure drop. Type "start" to initiate contact protocol.');
+        terminalInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const command = terminalInput.value.trim();
+                if(command === '') return;
+                addOutput(command, true); terminalInput.value = '';
+                if (command.toLowerCase() === 'clear') { terminalOutput.innerHTML = ''; return; }
+                if (formStep === 0) {
+                    if (command.toLowerCase() === 'start') { formStep = 1; addOutput(formPrompts[0]); } 
+                    else { addOutput('command not found: ' + command); addOutput('Type "start" to begin or "clear" to reset.'); }
+                } else if (formStep === 1) { formData.name = command; formStep = 2; addOutput(formPrompts[1]);
+                } else if (formStep === 2) {
+                    if (/^\S+@\S+\.\S+$/.test(command)) { formData.email = command; formStep = 3; addOutput(formPrompts[2]); } 
+                    else { addOutput('<span class="text-red-500">Error: Invalid email format. Please try again.</span>'); }
+                } else if (formStep === 3) {
+                    formData.message = command; addOutput('Encrypting and sending message...');
+                    setTimeout(() => {
+                       addOutput('<span class="text-blue-400">Message sent successfully. We will be in touch.</span>');
+                       addOutput('Protocol finished. Type "start" to begin again.');
+                       formStep = 0; formData = {};
+                    }, 1000);
+                }
+            }
+        });
+
+        // --- Background Canvas (Particles + Aurora) ---
+        const canvas = document.getElementById("background-canvas");
+        const ctx = canvas.getContext("2d");
+        let w, h; let particles = []; let time = 0;
+        const particleCount = 100;
+        function setupCanvas() {
+            w = canvas.width = window.innerWidth;
+            h = canvas.height = window.innerHeight;
+            particles = [];
+            for(let i=0; i<particleCount; i++) {
+                particles.push({
+                    x: Math.random() * w, y: Math.random() * h,
+                    vx: (Math.random() - 0.5) * 0.5, vy: (Math.random() - 0.5) * 0.5,
+                    size: Math.random() * 1.5 + 0.5
+                });
+            }
+        }
+        function drawCanvas() {
+            time += 0.005;
+            ctx.clearRect(0, 0, w, h);
+            ctx.fillStyle = "#02040a";
+            ctx.fillRect(0, 0, w, h);
+            // Aurora
+            for (let i = 0; i < 3; i++) {
+                ctx.beginPath();
+                const color = ["rgba(57, 255, 20, 0.15)", "rgba(20, 157, 255, 0.15)", "rgba(255, 0, 193, 0.1)"][i];
+                const x = w * 0.5 + Math.sin(time * (i + 1) * 0.7) * 200;
+                const y = h * 0.5 + Math.cos(time * (i + 1) * 0.9) * 200;
+                const r = w * 0.3 + i * 100;
+                const grad = ctx.createRadialGradient(x, y, 0, x, y, r);
+                grad.addColorStop(0, color); grad.addColorStop(1, "transparent");
+                ctx.fillStyle = grad; ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+            }
+            // Particles
+            ctx.fillStyle = "rgba(200, 210, 220, 0.5)";
+            particles.forEach(p => {
+                p.x += p.vx; p.y += p.vy;
+                if(p.x < 0 || p.x > w) p.vx *= -1;
+                if(p.y < 0 || p.y > h) p.vy *= -1;
+                ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
+            });
+            requestAnimationFrame(drawCanvas);
+        }
+        window.addEventListener('resize', setupCanvas);
+        setupCanvas(); drawCanvas();
+
+        // --- 3D Globe ---
+        const container = document.getElementById('globe-container');
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        const globeRadius = 5;
+        const globeGeometry = new THREE.SphereGeometry(globeRadius, 64, 64);
+        const globeMaterial = new THREE.MeshPhongMaterial({ color: 0x1072b8, transparent: true, opacity: 0.1, shininess: 50 });
+        const globe = new THREE.Mesh(globeGeometry, globeMaterial);
+        scene.add(globe);
+
+        // Add wireframe
+        const wireframe = new THREE.LineSegments(new THREE.WireframeGeometry(globeGeometry), new THREE.LineBasicMaterial({ color: 0x149dff, transparent: true, opacity: 0.15 }));
+        globe.add(wireframe);
+        
+        // Add starfield
+        const starGeometry = new THREE.BufferGeometry();
+        const starVertices = [];
+        for(let i=0; i<10000; i++) {
+            const x = THREE.MathUtils.randFloatSpread(200);
+            const y = THREE.MathUtils.randFloatSpread(200);
+            const z = THREE.MathUtils.randFloatSpread(200);
+            starVertices.push(x, y, z);
+        }
+        starGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starVertices, 3));
+        const starMaterial = new THREE.PointsMaterial({ color: 0x888888, size: 0.1 });
+        const stars = new THREE.Points(starGeometry, starMaterial);
+        scene.add(stars);
+
+        scene.add(new THREE.AmbientLight(0xcccccc, 0.8));
+        const light = new THREE.DirectionalLight(0xffffff, 1);
+        light.position.set(5, 3, 5);
+        scene.add(light);
+        camera.position.z = 12;
+
+        function latLonToVector3(lat, lon, r) {
+            const phi = (90 - lat) * (Math.PI / 180); const theta = (lon + 180) * (Math.PI / 180);
+            return new THREE.Vector3(-r * Math.sin(phi) * Math.cos(theta), r * Math.cos(phi), r * Math.sin(phi) * Math.sin(theta));
+        }
+
+        // Animated Arcs
+        const arcs = [];
+        for (let i = 0; i < 15; i++) {
+            const startLat = (Math.random() - 0.5) * 180; const startLng = (Math.random() - 0.5) * 360;
+            const endLat = (Math.random() - 0.5) * 180; const endLng = (Math.random() - 0.5) * 360;
+            const startVec = latLonToVector3(startLat, startLng, globeRadius); const endVec = latLonToVector3(endLat, endLng, globeRadius);
+            
+            const mid1 = startVec.clone().lerp(endVec, 0.25).normalize().multiplyScalar(globeRadius * (1 + Math.random() * 0.3));
+            const mid2 = startVec.clone().lerp(endVec, 0.75).normalize().multiplyScalar(globeRadius * (1 + Math.random() * 0.3));
+            const curve = new THREE.CubicBezierCurve3(startVec, mid1, mid2, endVec);
+
+            const points = curve.getPoints(200);
+            const geometry = new THREE.BufferGeometry().setFromPoints(points);
+            const material = new THREE.LineBasicMaterial({ color: [0xff00c1, 0x00fff9, 0x39ff14][i % 3], transparent: true, opacity: 0.7 });
+            const arc = new THREE.Line(geometry, material);
+            arc.geometry.setDrawRange(0, 0);
+            arcs.push({line: arc, points: points.length, progress: 0, speed: Math.random() * 0.005 + 0.005});
+            scene.add(arc);
+        }
+        
+        let isMouseDown = false, mouseX = 0, mouseY = 0;
+        container.addEventListener('mousedown', (e) => { isMouseDown = true; mouseX = e.clientX; mouseY = e.clientY; });
+        container.addEventListener('mouseup', () => { isMouseDown = false; });
+        container.addEventListener('mousemove', (e) => {
+            if (isMouseDown) {
+                const deltaX = e.clientX - mouseX; const deltaY = e.clientY - mouseY;
+                scene.rotation.y += deltaX * 0.005; scene.rotation.x += deltaY * 0.005;
+                mouseX = e.clientX; mouseY = e.clientY;
+            }
+        });
+
+        const clock = new THREE.Clock();
+        function animate() {
+            requestAnimationFrame(animate);
+            if (!isMouseDown) { scene.rotation.y += 0.001; }
+            stars.rotation.y += 0.0001;
+            
+            arcs.forEach(a => {
+                a.progress += a.speed;
+                if(a.progress > 1) { a.progress = 0; }
+                const drawCount = Math.floor(a.points * a.progress);
+                a.line.geometry.setDrawRange(0, drawCount);
+            });
+
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight; camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            setupCanvas();
+        });
+
+    </script>
+</body>
+</html>
